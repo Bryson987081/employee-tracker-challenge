@@ -60,7 +60,19 @@ const viewAllEmployees = function() {
 };
 
 const addDepartment = function() {
-    
+    inquirer
+        .prompt({
+            type: 'input',
+            name: 'departmentName',
+            message: 'What department would you like to add?',
+        })
+        .then((answers) => {
+            pool.query(`
+                INSERT INTO departments (name) VALUES ('${answers.departmentName}')
+                `, function (err, {rows}) {
+                    console.log(`Added ${answers.departmentName} to departments`);
+                })
+        })
 };
 
 const addRole = function() {
