@@ -16,3 +16,23 @@ const pool = new Pool(
 )
 
 pool.connect();
+
+init();
+
+const init = function() {
+    inquirer
+        .prompt({
+            type: 'list',
+            name: 'mainList',
+            message: 'What would you like to do?',
+            choices: [
+                'View All Employees',
+                'Add Employee',
+                'Update Employee Role',
+                'View All Roles',
+                'Add Role',
+                'View All Departments',
+                'Add Department',
+            ],
+        })
+};
