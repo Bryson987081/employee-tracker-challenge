@@ -1,7 +1,6 @@
 const { Pool } = require('pg');
 const inquirer = require('inquirer');
 const express = require('express');
-const { default: Choices } = require('inquirer/lib/objects/choices');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -46,6 +45,7 @@ const viewAllDepartments = function () {
         `, function (err, { rows }) {
         console.table(rows)
     })
+    init();
 };
 
 const viewAllRoles = function () {
@@ -57,6 +57,7 @@ const viewAllRoles = function () {
         `, function (err, { rows }) {
         console.table(rows)
     })
+    init();
 };
 
 const viewAllEmployees = function () {
@@ -69,6 +70,7 @@ const viewAllEmployees = function () {
         `, function (err, { rows }) {
         console.table(rows)
     })
+    init();
 };
 
 const addDepartment = function () {
@@ -86,6 +88,7 @@ const addDepartment = function () {
                 console.log(`Added ${answers.departmentName} to departments`);
             })
         })
+        init();
 };
 
 const addRole = function () {
@@ -115,7 +118,7 @@ const addRole = function () {
                 },
                 {
                     name: 'departmentName',
-                    type: 'input',
+                    type: 'list',
                     message: 'What department does this role belong to?',
                     choices: choices
                 }
@@ -131,14 +134,77 @@ const addRole = function () {
                 });
             });
     });
+    init();
 };
 
 const addEmployee = function () {
+    pool.query(`
+        SELECT *
+        FROM ROLES
+        `, function (err, roles) {
+        if (err) {
+            return (err);
+        }
+        const roleChoice = roles.map(role => ({
+            name: role.title,
+            value: role.id,
+        }))
 
+        pool.query(`
+                SELECT *
+                FROM employees
+                `, function (err, employees) {
+            if (err) {
+                return (err);
+            }
+
+            const managerChoice = employees.map(employee => ({
+                name: `${employee.first_name} ${employee.last_name}`,
+                value: employee.id
+            }));
+
+            inquirer
+                .prompt([
+                    {
+                        name: 'firstName',
+                        type: 'input',
+                        message: 'What is the employees first name?',
+                    },
+                    {
+                        name: 'lastName',
+                        type: 'input',
+                        message: 'What is the employees last name?',
+                    },
+                    {
+                        name: 'role',
+                        type: 'list',
+                        message: 'What is the employees role?',
+                        choices: roleChoice,
+                    },
+                    {
+                        name: 'manager',
+                        type: 'list',
+                        message: 'Who is the employees manager?',
+                        choices: managerChoice,
+                    },
+                ])
+                .then((answers) => {
+                    pool.query(`
+                                INSERT INTO employees (first_name, last_name, role_id, manager_id)
+                                `, function (err, { rows }) {
+                        if (err) {
+                            return (err);
+                        }
+                    })
+                })
+        })
+    })
+    init();
 };
 
 const updateEmployeeRole = function () {
 
+    init();
 };
 
 app.use((req, res) => {
