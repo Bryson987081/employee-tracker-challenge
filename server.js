@@ -5,6 +5,9 @@ const express = require('express');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
 const pool = new Pool(
     {
         user: 'postgres',
@@ -68,7 +71,8 @@ const addDepartment = function() {
         })
         .then((answers) => {
             pool.query(`
-                INSERT INTO departments (name) VALUES ('${answers.departmentName}')
+                INSERT INTO departments (name) 
+                VALUES ('${answers.departmentName}')
                 `, function (err, {rows}) {
                     console.log(`Added ${answers.departmentName} to departments`);
                 })
@@ -86,5 +90,14 @@ const addEmployee = function() {
 const updateEmployeeRole = function() {
     
 };
+
+app.use((req, res) => {
+    res.status(404).end();
+  });
+  
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+  
 
 init();
