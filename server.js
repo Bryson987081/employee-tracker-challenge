@@ -37,40 +37,69 @@ const init = function () {
                 'Update Employee Role',
             ],
         })
+        .then((answers) => {
+            switch (answers.mainList) {
+                case 'View All Departments':
+                    viewAllDepartments();
+                    break;
+                case 'View All Roles':
+                    viewAllRoles();
+                    break;
+                case 'View All Employees':
+                    viewAllEmployees();
+                    break;
+                case 'Add Department':
+                    addDepartment();
+                    break;
+                case 'Add Role':
+                    addRole();
+                    break;
+                case 'Add Employee':
+                    addEmployee();
+                    break;
+                case 'Update Employee Role':
+                    updateEmployeeRole();
+                    break;
+            }
+        })
 };
 
 const viewAllDepartments = function () {
     pool.query(`
         SELECT * FROM departments
         `, function (err, { rows }) {
-        console.table(rows)
-    })
-    init();
-};
+        console.table({ rows })
+        init();
+    });
+}
 
 const viewAllRoles = function () {
     pool.query(`
-        SELECT * roles.title, roles.id, departments.name, roles.salary 
+        SELECT roles.title, roles.id, departments.name, roles.salary 
         FROM roles 
         JOIN departments 
         ON roles.department_id = departments.id
         `, function (err, { rows }) {
         console.table(rows)
+        init();
     })
-    init();
 };
 
 const viewAllEmployees = function () {
     pool.query(`
-        SELECT epmployees.id, epmployees.first_name, epmployees.last_name, roles.title, department.name, roles.salary, managers.first_name, managers.last_name
+        SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.name, roles.salary, managers.first_name AS manager_first_name, managers.last_name AS manager_last_name
         FROM employees
         JOIN roles ON employees.role_id = roles.id
-        JOIN departments ON roles.departments_id = departments.id
-        LEFT JOIN employess managers ON employee.manager_id = managers.id       
-        `, function (err, { rows }) {
-        console.table(rows)
+        JOIN departments ON roles.department_id = departments.id
+        LEFT JOIN employees AS managers ON employees.manager_id = managers.id       
+        `, (err, { rows }) => {
+        if (err) {
+            console.error(err);
+            return init();
+        }
+        console.table(rows);
+        init();
     })
-    init();
 };
 
 const addDepartment = function () {
@@ -83,19 +112,23 @@ const addDepartment = function () {
         .then((answers) => {
             pool.query(`
                 INSERT INTO departments (name) 
-                VALUES ('${answers.name}')
-                `, function (err, { rows }) {
+                VALUES ('${answers.departmentName}')
+                `, (err) => {
+                if (err) {
+                    console.error(err);
+                    return init();
+                }
                 console.log(`Added ${answers.departmentName} to departments`);
-            })
+                init();
+            });
         })
-        init();
 };
 
 const addRole = function () {
     pool.query(`
         SELECT *
         FROM departments
-        `, function (err, { rows }) {
+        `, function (err, rows) {
         if (err) {
             return (err);
         }
@@ -131,10 +164,11 @@ const addRole = function () {
                     if (err) {
                         return (err);
                     }
+                    console.log(`Added ${answers.roleName}`);
+                    init();
                 });
             });
     });
-    init();
 };
 
 const addEmployee = function () {
@@ -195,17 +229,72 @@ const addEmployee = function () {
                         if (err) {
                             return (err);
                         }
-                    })
-                })
-        })
-    })
-    init();
+                        console.log(`Added ${answers.firstName} ${answers.lastName}`);
+                        init();
+                    });
+                });
+        });
+    });
 };
 
 const updateEmployeeRole = function () {
 
-    init();
-};
+    pool.query(`
+        SELECT *
+        FROM roles
+        `, function (err, roles) {
+        if (err) {
+            return (err);
+        }
+        const roleChoice = roles.map(role => ({
+            name: role.title,
+            value: role.id
+        }));
+
+        pool.query(`
+                SELECT *
+                FROM employees
+                `, function (err, employees) {
+            if (err) {
+                return (err);
+            }
+
+            const employeeChoice = employees.map(employee => ({
+                name: `${employee.first_name} ${employee.last_name}`,
+                value: employee.id
+            }));
+            inquirer
+                .prompt([
+                    {
+                        name: 'employee',
+                        type: 'list',
+                        message: 'Which employee would you like to update?',
+                        choices: employeeChoice,
+                    },
+                    {
+                        name: 'newRole',
+                        type: 'list',
+                        message: 'What is the new role?',
+                        choices: roleChoice,
+                    },
+                ])
+                .then((answers) => {
+                    pool.query(`
+                        UPDATE employees
+                        SET role_id ${answers.newRole}
+                        WHERE id = ${answers.employee}
+                        `, function (err, { rows }) {
+                        if (err) {
+                            return (err)
+                        }
+                        console.log(`Updated ${answers.employee}'s role to ${answers.newRole}`);
+                        init();
+                    });
+                });
+        });
+    });
+}
+
 
 app.use((req, res) => {
     res.status(404).end();
