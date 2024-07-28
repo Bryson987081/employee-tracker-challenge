@@ -67,7 +67,11 @@ const init = function () {
 const viewAllDepartments = function () {
     pool.query(`
         SELECT * FROM departments
-        `, function (err, { rows }) {
+        `, (err, { rows }) => {
+            if (err) {
+                console.error(err);
+                return init();
+            }
         console.table({ rows })
         init();
     });
@@ -75,7 +79,7 @@ const viewAllDepartments = function () {
 
 const viewAllRoles = function () {
     pool.query(`
-        SELECT roles.title, roles.id, departments.name, roles.salary 
+        SELECT roles.title, roles.id, departments.department_name, roles.salary 
         FROM roles 
         JOIN departments 
         ON roles.department_id = departments.id
@@ -87,7 +91,7 @@ const viewAllRoles = function () {
 
 const viewAllEmployees = function () {
     pool.query(`
-        SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.name, roles.salary, managers.first_name AS manager_first_name, managers.last_name AS manager_last_name
+        SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary, managers.first_name AS manager_first_name, managers.last_name AS manager_last_name
         FROM employees
         JOIN roles ON employees.role_id = roles.id
         JOIN departments ON roles.department_id = departments.id
@@ -111,7 +115,7 @@ const addDepartment = function () {
         })
         .then((answers) => {
             pool.query(`
-                INSERT INTO departments (name) 
+                INSERT INTO departments (department_name) 
                 VALUES ('${answers.departmentName}')
                 `, (err) => {
                 if (err) {
@@ -135,7 +139,7 @@ const addRole = function () {
         }
 
         const choices = rows.map(departments => ({
-            name: departments.name,
+            name: departments.department_name,
             value: departments.id
         }));
         inquirer
@@ -158,10 +162,8 @@ const addRole = function () {
                 }
             ])
             .then((answers) => {
-                pool.query(`
-                        INSERT INTO roles (title, salary, departments_id)
-                        VALUES ${answers.roleName, answers.salary, answers.departmentName}
-                        `,  (err) => {
+                pool.query('INSERT INTO roles (title, salary, department_id) VALUES ($1, $2, $3)', [answers.roleName, answers.salary, answers.departmentName]
+                        ,  (err) => {
                     if (err) {
                         console.error(err);
                         return init();
@@ -176,7 +178,7 @@ const addRole = function () {
 const addEmployee = function () {
     pool.query(`
         SELECT *
-        FROM ROLES
+        FROM roles
         `, (err, { rows} ) => {
         if (err) {
             console.error(err);
@@ -228,7 +230,8 @@ const addEmployee = function () {
                 ])
                 .then((answers) => {
                     pool.query(`
-                                INSERT INTO employees (first_name, last_name, role_id, manager_id${answers.firstName, answers.lastName, answers.role, answers.manager})
+                                INSERT INTO employees (first_name, last_name, role_id, manager_id)
+                                VALUES ${answers.firstName, answers.lastName, answers.role, answers.manager})
                                 `, (err) => {
                         if (err) {
                             console.error(err);
