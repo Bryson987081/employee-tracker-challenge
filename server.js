@@ -128,9 +128,10 @@ const addRole = function () {
     pool.query(`
         SELECT *
         FROM departments
-        `, function (err, rows) {
+        `, (err, { rows }) => {
         if (err) {
-            return (err);
+            console.error(err);
+            return init();
         }
 
         const choices = rows.map(departments => ({
@@ -160,9 +161,10 @@ const addRole = function () {
                 pool.query(`
                         INSERT INTO roles (title, salary, departments_id)
                         VALUES ${answers.roleName, answers.salary, answers.departmentName}
-                        `, function (err, { rows }) {
+                        `,  (err) => {
                     if (err) {
-                        return (err);
+                        console.error(err);
+                        return init();
                     }
                     console.log(`Added ${answers.roleName}`);
                     init();
@@ -175,11 +177,12 @@ const addEmployee = function () {
     pool.query(`
         SELECT *
         FROM ROLES
-        `, function (err, roles) {
+        `, (err, { rows} ) => {
         if (err) {
-            return (err);
+            console.error(err);
+            return init();
         }
-        const roleChoice = roles.map(role => ({
+        const roleChoice = rows.map(role => ({
             name: role.title,
             value: role.id,
         }))
@@ -187,12 +190,13 @@ const addEmployee = function () {
         pool.query(`
                 SELECT *
                 FROM employees
-                `, function (err, employees) {
+                `, (err, { rows }) => {
             if (err) {
-                return (err);
+                console.error(err);
+                return init();
             }
 
-            const managerChoice = employees.map(employee => ({
+            const managerChoice = rows.map(employee => ({
                 name: `${employee.first_name} ${employee.last_name}`,
                 value: employee.id
             }));
@@ -224,10 +228,11 @@ const addEmployee = function () {
                 ])
                 .then((answers) => {
                     pool.query(`
-                                INSERT INTO employees (first_name, last_name, role_id, manager_id)
-                                `, function (err, { rows }) {
+                                INSERT INTO employees (first_name, last_name, role_id, manager_id${answers.firstName, answers.lastName, answers.role, answers.manager})
+                                `, (err) => {
                         if (err) {
-                            return (err);
+                            console.error(err);
+                            return init();
                         }
                         console.log(`Added ${answers.firstName} ${answers.lastName}`);
                         init();
@@ -242,11 +247,12 @@ const updateEmployeeRole = function () {
     pool.query(`
         SELECT *
         FROM roles
-        `, function (err, roles) {
+        `, (err, { rows }) => {
         if (err) {
-            return (err);
+            console.error(err)
+            return init();
         }
-        const roleChoice = roles.map(role => ({
+        const roleChoice = rows.map(role => ({
             name: role.title,
             value: role.id
         }));
@@ -254,12 +260,13 @@ const updateEmployeeRole = function () {
         pool.query(`
                 SELECT *
                 FROM employees
-                `, function (err, employees) {
+                `, (err, { rows }) => {
             if (err) {
-                return (err);
+                console.error(err);
+                return init();
             }
 
-            const employeeChoice = employees.map(employee => ({
+            const employeeChoice = rows.map(employee => ({
                 name: `${employee.first_name} ${employee.last_name}`,
                 value: employee.id
             }));
@@ -283,9 +290,10 @@ const updateEmployeeRole = function () {
                         UPDATE employees
                         SET role_id ${answers.newRole}
                         WHERE id = ${answers.employee}
-                        `, function (err, { rows }) {
+                        `, (err) => {
                         if (err) {
-                            return (err)
+                            console.error(err);
+                            return init();
                         }
                         console.log(`Updated ${answers.employee}'s role to ${answers.newRole}`);
                         init();
