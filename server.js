@@ -66,13 +66,14 @@ const init = function () {
 
 const viewAllDepartments = function () {
     pool.query(`
-        SELECT * FROM departments
+        SELECT departments.id, departments.department_name
+        FROM departments
         `, (err, { rows }) => {
-            if (err) {
-                console.error(err);
-                return init();
-            }
-        console.table({ rows })
+        if (err) {
+            console.error(err);
+            return init();
+        }
+        console.table(rows)
         init();
     });
 }
@@ -163,14 +164,14 @@ const addRole = function () {
             ])
             .then((answers) => {
                 pool.query('INSERT INTO roles (title, salary, department_id) VALUES ($1, $2, $3)', [answers.roleName, answers.salary, answers.departmentName]
-                        ,  (err) => {
-                    if (err) {
-                        console.error(err);
-                        return init();
-                    }
-                    console.log(`Added ${answers.roleName}`);
-                    init();
-                });
+                    , (err) => {
+                        if (err) {
+                            console.error(err);
+                            return init();
+                        }
+                        console.log(`Added ${answers.roleName}`);
+                        init();
+                    });
             });
     });
 };
@@ -179,7 +180,7 @@ const addEmployee = function () {
     pool.query(`
         SELECT *
         FROM roles
-        `, (err, { rows} ) => {
+        `, (err, { rows }) => {
         if (err) {
             console.error(err);
             return init();
@@ -229,17 +230,16 @@ const addEmployee = function () {
                     },
                 ])
                 .then((answers) => {
-                    pool.query(`
-                                INSERT INTO employees (first_name, last_name, role_id, manager_id)
-                                VALUES ${answers.firstName, answers.lastName, answers.role, answers.manager})
-                                `, (err) => {
-                        if (err) {
-                            console.error(err);
-                            return init();
-                        }
-                        console.log(`Added ${answers.firstName} ${answers.lastName}`);
-                        init();
-                    });
+                    pool.query('INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)',
+                        [answers.firstName, answers.lastName, answers.role, answers.manager],
+                        (err) => {
+                            if (err) {
+                                console.error(err);
+                                return init();
+                            }
+                            console.log(`Added ${answers.firstName} ${answers.lastName}`);
+                            init();
+                        });
                 });
         });
     });
@@ -255,9 +255,9 @@ const updateEmployeeRole = function () {
             console.error(err)
             return init();
         }
-        const roleChoice = rows.map(role => ({
-            name: role.title,
-            value: role.id
+        const roleChoice = rows.map(roles => ({
+            name: roles.title,
+            value: roles.id
         }));
 
         pool.query(`
@@ -289,18 +289,16 @@ const updateEmployeeRole = function () {
                     },
                 ])
                 .then((answers) => {
-                    pool.query(`
-                        UPDATE employees
-                        SET role_id ${answers.newRole}
-                        WHERE id = ${answers.employee}
-                        `, (err) => {
-                        if (err) {
-                            console.error(err);
-                            return init();
-                        }
-                        console.log(`Updated ${answers.employee}'s role to ${answers.newRole}`);
-                        init();
-                    });
+                    pool.query('UPDATE employees SET role_id = $1 WHERE id = $2',
+                        [answers.employee, answers.newRole],
+                        (err) => {
+                            if (err) {
+                                console.error(err);
+                                return init();
+                            }
+                            console.log(`Updated ${answers.employee}'s role to ${answers.newRole}`);
+                            init();
+                        });
                 });
         });
     });
