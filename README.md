@@ -28,5 +28,6 @@ This was acomplished by:
 
 ## Links
 
-[Video]()
+[Video](https://drive.google.com/file/d/1E0oCTRFqbJNlnvIx9DOxq1d9jJVZEH2E/view?usp=sharing)
+
 [GitHub](https://github.com/Bryson987081/employee-tracker-challenge)
